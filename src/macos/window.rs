@@ -437,7 +437,7 @@ impl WindowState {
             copyDescription: None,
         };
 
-        let timer = CFRunLoopTimer::new(0.0, 0.015, 0, 0, timer_callback, &mut timer_context);
+        let timer = CFRunLoopTimer::new(0.0, 0.001, 0, 0, timer_callback, &mut timer_context);
 
         CFRunLoop::get_current().add_timer(&timer, kCFRunLoopDefaultMode);
 
