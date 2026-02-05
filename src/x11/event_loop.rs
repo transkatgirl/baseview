@@ -29,7 +29,7 @@ impl EventLoop {
             window,
             handler: Box::new(handler),
             parent_handle,
-            frame_interval: Duration::from_millis(15),
+            frame_interval: Duration::from_millis(1),
             event_loop_running: false,
             new_physical_size: None,
         }
