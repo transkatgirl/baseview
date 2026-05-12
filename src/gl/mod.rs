@@ -21,7 +21,7 @@ mod macos;
 #[cfg(target_os = "macos")]
 use macos as platform;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct GlConfig {
     pub version: (u8, u8),
     pub profile: Profile,
@@ -111,5 +111,14 @@ impl GlContext {
     #[cfg(target_os = "macos")]
     pub(crate) fn resize(&self, size: cocoa::foundation::NSSize) {
         self.context.resize(size);
+    }
+
+    /// Pointer to the `NSOpenGLView` this context renders into. Used by
+    /// the parent `NSView`'s `hitTest:` override to collapse hits on the
+    /// render subview to the parent, so AppKit routes `mouseDown:` on
+    /// first click in non-key windows.
+    #[cfg(target_os = "macos")]
+    pub(crate) fn ns_view(&self) -> cocoa::base::id {
+        self.context.ns_view()
     }
 }

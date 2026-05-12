@@ -11,7 +11,7 @@ use cocoa::appkit::{
 use cocoa::base::{id, nil, BOOL, NO, YES};
 use cocoa::foundation::{NSAutoreleasePool, NSPoint, NSRect, NSSize, NSString};
 use core_foundation::runloop::{
-    CFRunLoop, CFRunLoopTimer, CFRunLoopTimerContext, __CFRunLoopTimer, kCFRunLoopDefaultMode,
+    __CFRunLoopTimer, kCFRunLoopDefaultMode, CFRunLoop, CFRunLoopTimer, CFRunLoopTimerContext,
 };
 use keyboard_types::KeyboardEvent;
 use objc::class;
@@ -61,11 +61,15 @@ pub(super) struct WindowInner {
     /// Only set if we created the parent window, i.e. we are running in
     /// parentless mode
     ns_window: Cell<Option<id>>,
+
+    /// Only set when running in parented mode.
+    parent_ns_window: Option<id>,
+
     /// Our subclassed NSView
     ns_view: id,
 
     #[cfg(feature = "opengl")]
-    gl_context: Option<GlContext>,
+    pub(super) gl_context: Option<GlContext>,
 }
 
 impl WindowInner {
@@ -109,7 +113,9 @@ impl WindowInner {
 
     fn raw_window_handle(&self) -> RawWindowHandle {
         if self.open.get() {
-            let ns_window = self.ns_window.get().unwrap_or(ptr::null_mut()) as *mut c_void;
+            let ns_window =
+                self.ns_window.get().or(self.parent_ns_window).unwrap_or(ptr::null_mut())
+                    as *mut c_void;
 
             let mut handle = AppKitWindowHandle::empty();
             handle.ns_window = ns_window;
@@ -155,6 +161,11 @@ impl<'a> Window<'a> {
             open: Cell::new(true),
             ns_app: Cell::new(None),
             ns_window: Cell::new(None),
+            parent_ns_window: if handle.ns_window.is_null() {
+                None
+            } else {
+                Some(handle.ns_window.cast())
+            },
             ns_view,
 
             #[cfg(feature = "opengl")]
@@ -230,6 +241,7 @@ impl<'a> Window<'a> {
             open: Cell::new(true),
             ns_app: Cell::new(Some(app)),
             ns_window: Cell::new(Some(ns_window)),
+            parent_ns_window: None,
             ns_view,
 
             #[cfg(feature = "opengl")]
